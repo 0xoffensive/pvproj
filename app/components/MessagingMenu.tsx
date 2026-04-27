@@ -6,12 +6,8 @@ import { Message } from "../interfaces/message";
 // rest
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { sendMessage } from "@/app/actions";
 import { getPusherClient } from "../../lib/pusherClient"; // Import our singleton
-import { tr } from "framer-motion/client";
-import UnitedEffects from "next-auth/providers/united-effects";
 
 // 1. DATA INTERFACES
 
@@ -24,8 +20,6 @@ export default function MessagingMenu() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chats, setChats] = useState<Chat[]>([]);
-
-  const [globalSentChat, setGlobalSentChat] = useState<Chat | null>(null);
 
   const [scrollPositions, setScrollPositions] = useState<
     Record<string, number>
@@ -197,7 +191,7 @@ export default function MessagingMenu() {
   }, [selectedChat?.chatId]);
 
   useEffect(() => {
-    const handleGlobalOpenChat = (event: any) => {
+    const handleGlobalOpenChat = (event: CustomEvent<{ data: Chat }>) => {
       const chatData = event.detail.data;
 
       if (chatData) {
@@ -228,8 +222,12 @@ export default function MessagingMenu() {
       }
     };
 
-    window.addEventListener("openChat", handleGlobalOpenChat);
-    return () => window.removeEventListener("openChat", handleGlobalOpenChat);
+    window.addEventListener("openChat", handleGlobalOpenChat as EventListener);
+    return () =>
+      window.removeEventListener(
+        "openChat",
+        handleGlobalOpenChat as EventListener,
+      );
   }, []);
 
   // --- ACTIONS ---
@@ -334,7 +332,7 @@ export default function MessagingMenu() {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end h-screen">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end sm:bottom-6 sm:right-6">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -511,7 +509,7 @@ export default function MessagingMenu() {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => handleMenuButton()}
-        className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 border border-white/10 ${
+        className={`h-12 w-12 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 border border-white/10 sm:h-14 sm:w-14 ${
           isOpen
             ? "bg-zinc-800 text-white"
             : "bg-gradient-to-tr from-green-700 to-green-400 text-white shadow-green-900/40"

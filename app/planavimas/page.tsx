@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import Navbar from "../components/Navbar";
 
 interface Seedling {
   id: string;
@@ -215,7 +216,8 @@ export default function PlanavimasPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="mx-auto max-w-7xl px-6 py-20">
+      <Navbar />
+      <div className="mx-auto max-w-7xl px-6 py-28">
         <div className="mb-6 flex items-center justify-between gap-4">
           <Link
             href="/"

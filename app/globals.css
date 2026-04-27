@@ -37,6 +37,12 @@ html {
   }
 }
 
+@media (max-width: 640px) {
+  html {
+    font-size: 15px;
+  }
+}
+
 @layer base {
   html {
     scrollbar-width: thin;

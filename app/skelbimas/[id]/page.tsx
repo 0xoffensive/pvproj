@@ -7,7 +7,6 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "../../components/Navbar";
-import MessagingMenu from "../../components/MessagingMenu";
 import { tr } from "framer-motion/client";
 
 interface Skelbimas {
@@ -161,8 +160,6 @@ export default function SkelbimasDetailPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <Navbar />
-
-      <MessagingMenu />
 
       <div className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 pt-24 pb-12">
         <div className="mx-auto max-w-5xl px-6">

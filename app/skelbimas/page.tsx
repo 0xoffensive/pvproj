@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "../components/Navbar";
-import MessagingMenu from "../components/MessagingMenu";
 
 interface Skelbimas {
   id_Skelbimas: number;
@@ -133,8 +132,6 @@ export default function SkelbiaiPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <Navbar />
-
-      <MessagingMenu />
 
       {/* HEADER */}
       <div className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 pt-24 pb-12">

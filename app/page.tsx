@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Navbar from "./components/Navbar";
-import MessagingMenu from './components/MessagingMenu';
 import { useState, useEffect } from "react";
 
 interface Skelbimas {
@@ -32,10 +31,8 @@ interface Skelbimas {
 }
 
 export default function GuestPage() {
-  const [show, setShow] = useState(false);
   const [skelbimai, setSkelbimai] = useState<Skelbimas[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchSkelbimai = async () => {
@@ -53,7 +50,7 @@ export default function GuestPage() {
     };
 
     fetchSkelbimai();
-  }, [isOpen]);
+  }, []);
 
   return (
     
@@ -61,12 +58,8 @@ export default function GuestPage() {
       {/* ── NAVIGATION ── */}
       <Navbar />
 
-      {/* ── MESSAGING MENU ── */}
-      <MessagingMenu />
-
-
       {/* ── HERO SECTION ── */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-24 text-center">
+      <section className="relative flex min-h-[82svh] flex-col items-center justify-center px-4 pt-20 text-center sm:min-h-screen sm:px-6 sm:pt-24">
         {/* Background gradient decoration */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-green-200/40 blur-3xl dark:bg-green-900/20" />
@@ -77,15 +70,15 @@ export default function GuestPage() {
           <span className="mb-6 inline-block rounded-full bg-green-100 dark:bg-green-900/40 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-green-800 dark:text-green-300">
             Miško sodinukų platforma
           </span>
-          <h1 className="text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl lg:text-7xl">
+          <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl lg:text-7xl">
             Sodink protingai.{" "}
             <span className="text-green-700 dark:text-green-400">Augink atsakingai.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-zinc-600 dark:text-zinc-400 sm:mt-6 sm:text-lg">
             Raskite geriausius miško sodinukus, suplanuokite sodinimą su interaktyviu žemėlapiu ir
             gaukite mokslu pagrįstas rekomendacijas — viskas vienoje vietoje.
           </p>
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <div className="mt-8 flex flex-col items-center gap-3 sm:mt-10 sm:gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/register"
               className="flex h-14 w-full items-center justify-center rounded-xl bg-green-700 px-8 text-base font-semibold text-white shadow-lg shadow-green-700/25 transition-all hover:bg-green-800 hover:shadow-xl hover:shadow-green-700/30 sm:w-auto"
@@ -103,24 +96,24 @@ export default function GuestPage() {
         </div>
 
         {/* Stats bar */}
-        <div className="relative z-10 mx-auto mt-20 grid max-w-3xl grid-cols-3 gap-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8">
+        <div className="relative z-10 mx-auto mt-10 grid max-w-3xl grid-cols-3 gap-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 sm:mt-20 sm:gap-8 sm:p-8">
           <div className="text-center">
-            <p className="text-3xl font-bold text-green-700 dark:text-green-400">50+</p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Sodinukų rūšių</p>
+            <p className="text-2xl font-bold text-green-700 dark:text-green-400 sm:text-3xl">50+</p>
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">Sodinukų rūšių</p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-green-700 dark:text-green-400">100+</p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Pardavėjų</p>
+            <p className="text-2xl font-bold text-green-700 dark:text-green-400 sm:text-3xl">100+</p>
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">Pardavėjų</p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-green-700 dark:text-green-400">∞</p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Sodinimo planų</p>
+            <p className="text-2xl font-bold text-green-700 dark:text-green-400 sm:text-3xl">∞</p>
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">Sodinimo planų</p>
           </div>
         </div>
       </section>
 
       {/* ── FEATURES SECTION ── */}
-      <section id="features" className="mx-auto max-w-7xl px-6 py-24">
+      <section id="features" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-24">
         <div className="text-center">
           <span className="text-sm font-semibold uppercase tracking-wider text-green-700 dark:text-green-400">
             Funkcijos
@@ -131,33 +124,33 @@ export default function GuestPage() {
           </p>
         </div>
 
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
+        <div className="mt-10 grid gap-5 sm:mt-16 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 sm:p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40 text-2xl">🗺️</div>
             <h3 className="text-lg font-semibold">Interaktyvus žemėlapis</h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Pažymėkite savo sklypą žemėlapyje, pasirinkite sodinimo zoną ir gaukite vizualų sodinimo planą su tiksliu medžių išdėstymu.</p>
           </div>
-          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
+          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 sm:p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40 text-2xl">🌱</div>
             <h3 className="text-lg font-semibold">Išmanus sodinimo planuotojas</h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Algoritmas atsižvelgia į rūšių suderinamumą, dirvožemio rūgštingumą, klimato zoną ir tarpus tarp medžių — optimaliam augimui.</p>
           </div>
-          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
+          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 sm:p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40 text-2xl">🛒</div>
             <h3 className="text-lg font-semibold">Sodinukų turgavietė</h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Peržiūrėkite verslininkų skelbiamus sodinukus, palyginkite kainas ir susisiekite tiesiogiai per mūsų pokalbių sistemą.</p>
           </div>
-          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
+          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 sm:p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40 text-2xl">💬</div>
             <h3 className="text-lg font-semibold">Pokalbių sistema</h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Bendraujkite su pardavėjais tiesiogiai platformoje. Aptarkite kainas, pristatymo sąlygas ir kitus klausimus.</p>
           </div>
-          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
+          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 sm:p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40 text-2xl">📋</div>
             <h3 className="text-lg font-semibold">Pirkimo sąrašas</h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Baigę planavimą, gausite tikslų sodinukų sąrašą su kiekiais ir nuorodomis į esamus pardavėjų pasiūlymus.</p>
           </div>
-          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
+          <div className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 sm:p-8 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40 text-2xl">📊</div>
             <h3 className="text-lg font-semibold">Verslo skelbimų valdymas</h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Verslininkai gali lengvai įkelti savo sodinukų pasiūlymus, valdyti atsargas ir stebėti pirkėjų užklausas.</p>
@@ -166,13 +159,13 @@ export default function GuestPage() {
       </section>
 
       {/* ── HOW IT WORKS SECTION ── */}
-      <section id="how-it-works" className="bg-zinc-50 dark:bg-zinc-900 py-24">
+      <section id="how-it-works" className="bg-zinc-50 dark:bg-zinc-900 py-14 sm:py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center">
             <span className="text-sm font-semibold uppercase tracking-wider text-green-700 dark:text-green-400">Kaip veikia</span>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Trys paprasti žingsniai</h2>
           </div>
-          <div className="mt-16 grid gap-12 md:grid-cols-3">
+          <div className="mt-10 grid gap-8 sm:mt-16 sm:gap-12 md:grid-cols-3">
             <div className="flex flex-col items-center text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-green-700 text-2xl font-bold text-white shadow-lg shadow-green-700/25">1</div>
               <h3 className="mt-6 text-xl font-semibold">Pažymėkite savo sklypą</h3>
@@ -193,7 +186,7 @@ export default function GuestPage() {
       </section>
 
       {/* ── MARKETPLACE PREVIEW SECTION ── */}
-      <section id="marketplace" className="mx-auto max-w-7xl px-6 py-24">
+      <section id="marketplace" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-24">
         <div className="text-center">
           <span className="text-sm font-semibold uppercase tracking-wider text-green-700 dark:text-green-400">Turgavietė</span>
           <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Populiariausi sodinukai</h2>
@@ -203,8 +196,8 @@ export default function GuestPage() {
         {loading ? (
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 animate-pulse">
-                <div className="mb-4 h-40 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+              <div key={i} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-5 sm:p-6 animate-pulse">
+                <div className="mb-4 h-32 sm:h-40 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
                 <div className="mb-2 h-6 w-3/4 rounded bg-zinc-200 dark:bg-zinc-800" />
                 <div className="mb-4 h-4 w-1/2 rounded bg-zinc-200 dark:bg-zinc-800" />
                 <div className="mt-4 h-8 w-1/2 rounded bg-zinc-200 dark:bg-zinc-800" />
@@ -214,8 +207,8 @@ export default function GuestPage() {
         ) : skelbimai.length > 0 ? (
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {skelbimai.map((skelbimas) => (
-              <Link key={skelbimas.id_Skelbimas} href={`/skelbimas/${skelbimas.id_Skelbimas}`} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
-                <div className="h-40 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden mb-4 flex items-center justify-center relative">
+              <Link key={skelbimas.id_Skelbimas} href={`/skelbimas/${skelbimas.id_Skelbimas}`} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-5 sm:p-6 transition-all hover:border-green-300 dark:hover:border-green-800 hover:shadow-lg">
+                <div className="h-32 sm:h-40 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden mb-4 flex items-center justify-center relative">
                   {skelbimas.nuotrauka ? (
                     <img
                       src={skelbimas.nuotrauka}
@@ -239,7 +232,7 @@ export default function GuestPage() {
             ))}
           </div>
         ) : (
-          <div className="mt-12 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-12 text-center">
+          <div className="mt-12 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 sm:p-12 text-center">
             <p className="text-zinc-600 dark:text-zinc-400">Šiuo metu nėra aktyvių skelbiimų. Grįžkite vėliau!</p>
           </div>
         )}
@@ -252,9 +245,9 @@ export default function GuestPage() {
       </section>
 
       {/* ── PLANNER PREVIEW SECTION ── */}
-      <section id="planner" className="bg-zinc-50 dark:bg-zinc-900 py-24">
+      <section id="planner" className="bg-zinc-50 dark:bg-zinc-900 py-14 sm:py-24">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="grid items-center gap-16 lg:grid-cols-2">
+          <div className="grid items-center gap-10 sm:gap-16 lg:grid-cols-2">
             <div>
               <span className="text-sm font-semibold uppercase tracking-wider text-green-700 dark:text-green-400">Sodinimo planuotojas</span>
               <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Jūsų miškas, suprojektuotas mokslo pagrindu</h2>
@@ -280,7 +273,7 @@ export default function GuestPage() {
                 Išbandyti planuotoją
               </Link>
             </div>
-            <div className="flex h-96 items-center justify-center rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950">
+            <div className="flex h-64 sm:h-96 items-center justify-center rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950">
               <div className="text-center">
                 <span className="text-6xl">🗺️</span>
                 <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Interaktyvaus žemėlapio vieta</p>
@@ -292,8 +285,8 @@ export default function GuestPage() {
       </section>
 
       {/* ── CTA SECTION ── */}
-      <section className="mx-auto max-w-7xl px-6 py-24">
-        <div className="rounded-3xl bg-green-700 p-12 text-center text-white shadow-2xl shadow-green-700/20 sm:p-16">
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-24">
+        <div className="rounded-3xl bg-green-700 p-8 text-center text-white shadow-2xl shadow-green-700/20 sm:p-16">
           <h2 className="text-3xl font-bold sm:text-4xl">Pasiruošę sodinti?</h2>
           <p className="mx-auto mt-4 max-w-xl text-green-100">
             Prisijunkite prie augančios miško sodinukų bendruomenės. Nesvarbu ar perkate, ar parduodate —
@@ -312,7 +305,7 @@ export default function GuestPage() {
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-zinc-200 dark:border-zinc-800">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 py-12 sm:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 px-4 py-10 sm:gap-6 sm:px-6 sm:py-12 sm:flex-row">
           <div className="flex items-center gap-2 text-lg font-bold text-green-700 dark:text-green-400">
             <span>🌲</span>
             Dievų Giria
