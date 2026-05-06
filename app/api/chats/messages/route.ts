@@ -32,7 +32,7 @@ export async function GET(request: Request) {
         z.id_Zinute,
         z.fk_Vartotojasid_Vartotojas,
         z.fk_Pokalbisid_Pokalbis
-        FROM Zinutes z
+        FROM zinutes z
         WHERE z.fk_Pokalbisid_Pokalbis = ?
     `,
       [chatId],

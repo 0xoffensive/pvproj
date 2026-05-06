@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
     // Check if email already exists
     const [existingEmail] = await connection.execute<RowDataPacket[]>(
-      "SELECT id_Vartotojas FROM Vartotojai WHERE e_pastas = ?",
+      "SELECT id_Vartotojas FROM vartotojai WHERE e_pastas = ?",
       [e_pastas]
     );
 
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 
     // Check if username already exists
     const [existingUsername] = await connection.execute<RowDataPacket[]>(
-      "SELECT id_Vartotojas FROM Vartotojai WHERE slapyvardis = ?",
+      "SELECT id_Vartotojas FROM vartotojai WHERE slapyvardis = ?",
       [slapyvardis]
     );
 
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     try {
       // 1. Create user (Now including phone and city)
       const [userResult] = await connection.execute<ResultSetHeader>(
-        "INSERT INTO Vartotojai (vardas, pavarde, e_pastas, slapyvardis, slaptazodis, tel_nr, miestas, role, busena) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO vartotojai (vardas, pavarde, e_pastas, slapyvardis, slaptazodis, tel_nr, miestas, role, busena) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [vardas, pavarde, e_pastas, slapyvardis, hashedPassword, tel_nr || null, miestas || null, userRole, userStatus]
       );
 
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       // 2. If atstovas, create the imone linked to this user
       if (role === "atstovas" && imone) {
         await connection.execute(
-          "INSERT INTO Imones (pavadinimas, miestas, pasto_kodas, adresas, pastato_nr, tel_nr, imones_kodas, pvm_kodas, svetaine, fk_Vartotojasid_Vartotojas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "INSERT INTO imones (pavadinimas, miestas, pasto_kodas, adresas, pastato_nr, tel_nr, imones_kodas, pvm_kodas, svetaine, fk_Vartotojasid_Vartotojas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           [
             imone.pavadinimas,
             imone.miestas || null,
@@ -131,7 +131,7 @@ export async function POST(request: Request) {
       } else if (role === "privatus_pardavejas") {
         // Create a 'dummy' imone mapped to the private seller, so database relationships don't break
         await connection.execute(
-          "INSERT INTO Imones (pavadinimas, miestas, tel_nr, svetaine, fk_Vartotojasid_Vartotojas) VALUES (?, ?, ?, ?, ?)",
+          "INSERT INTO imones (pavadinimas, miestas, tel_nr, svetaine, fk_Vartotojasid_Vartotojas) VALUES (?, ?, ?, ?, ?)",
           [
             `${vardas} ${pavarde}`, 
             miestas,

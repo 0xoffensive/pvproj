@@ -14,7 +14,7 @@ export async function GET() {
 
     const [users] = await pool.execute<RowDataPacket[]>(
       `SELECT id_Vartotojas, vardas, pavarde, e_pastas, slapyvardis, role, busena, tel_nr, miestas
-       FROM Vartotojai
+       FROM vartotojai
        ORDER BY id_Vartotojas DESC`
     );
 
@@ -37,18 +37,18 @@ export async function PUT(request: Request) {
 
     if (action === "approve") {
       // Approve user - set busena to aktyvus
-      await pool.execute(
-        "UPDATE Vartotojai SET busena = 'aktyvus' WHERE id_Vartotojas = ?",
-        [id]
-      );
+      await pool.execute({
+        sql: "UPDATE vartotojai SET busena = 'aktyvus' WHERE id_Vartotojas = ?",
+        values: [id]
+      });
       return NextResponse.json({ message: "Vartotojas patvirtintas" });
     }
 
     if (action === "activate") {
-      await pool.execute(
-        "UPDATE Vartotojai SET busena = 'aktyvus' WHERE id_Vartotojas = ?",
-        [id]
-      );
+      await pool.execute({
+        sql: "UPDATE vartotojai SET busena = 'aktyvus' WHERE id_Vartotojas = ?",
+        values: [id]
+      });
       return NextResponse.json({ message: "Vartotojas aktyvuotas" });
     }
 
@@ -87,10 +87,10 @@ export async function PUT(request: Request) {
 
       if (fields.length > 0) {
         values.push(id);
-        await pool.execute(
-          `UPDATE Vartotojai SET ${fields.join(", ")} WHERE id_Vartotojas = ?`,
-          values
-        );
+        await pool.execute({
+          sql: `UPDATE vartotojai SET ${fields.join(", ")} WHERE id_Vartotojas = ?`,
+          values: values
+        });
       }
       return NextResponse.json({ message: "Vartotojas atnaujintas" });
     }

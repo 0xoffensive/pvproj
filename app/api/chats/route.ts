@@ -20,9 +20,9 @@ export async function GET(request: Request) {
         p.id_Pokalbis AS id,
         s.pavadinimas AS name,
         n.ref AS image
-        FROM Pokalbiai p
-        LEFT JOIN Skelbimai s ON p.fk_Skelbimasid_Skelbimas = s.id_Skelbimas
-        LEFT JOIN Nuotraukos n ON s.id_Skelbimas = n.fk_Skelbimasid_Skelbimas
+        FROM pokalbiai p
+        LEFT JOIN skelbimai s ON p.fk_Skelbimasid_Skelbimas = s.id_Skelbimas
+        LEFT JOIN nuotraukos n ON s.id_Skelbimas = n.fk_Skelbimasid_Skelbimas
         WHERE fk_Vartotojasid_Vartotojas = ?
     `,
         [userId],
@@ -35,11 +35,11 @@ export async function GET(request: Request) {
         p.id_Pokalbis AS id,
         CONCAT(v.vardas, ' : ', s.pavadinimas) AS name,
         n.ref AS image
-        FROM Pokalbiai p
-        LEFT JOIN Skelbimai s ON p.fk_Skelbimasid_Skelbimas = s.id_Skelbimas
-        LEFT JOIN Imones i ON s.fk_Imoneid_Imone = i.id_Imone
-        LEFT JOIN Vartotojai v ON p.fk_Vartotojasid_Vartotojas = v.id_Vartotojas
-        LEFT JOIN Nuotraukos n ON s.id_Skelbimas = n.fk_Skelbimasid_Skelbimas
+        FROM pokalbiai p
+        LEFT JOIN skelbimai s ON p.fk_Skelbimasid_Skelbimas = s.id_Skelbimas
+        LEFT JOIN imones i ON s.fk_Imoneid_Imone = i.id_Imone
+        LEFT JOIN vartotojai v ON p.fk_Vartotojasid_Vartotojas = v.id_Vartotojas
+        LEFT JOIN nuotraukos n ON s.id_Skelbimas = n.fk_Skelbimasid_Skelbimas
         WHERE i.fk_Vartotojasid_Vartotojas = ?
     `,
         [announcerId],
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     const { postId } = body;
 
     const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO Pokalbiai (
+      `INSERT INTO pokalbiai (
         fk_Vartotojasid_Vartotojas, fk_Skelbimasid_Skelbimas
       ) VALUES (?, ?)`,
       [userId, postId],

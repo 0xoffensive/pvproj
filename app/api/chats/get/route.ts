@@ -13,8 +13,8 @@ export async function GET(request: Request) {
       SELECT
         p.id_Pokalbis AS chatId,
         s.pavadinimas AS name
-      FROM Pokalbiai p
-      LEFT JOIN Skelbimai s ON p.fk_Skelbimasid_Skelbimas = s.id_Skelbimas
+      FROM pokalbiai p
+      LEFT JOIN skelbimai s ON p.fk_Skelbimasid_Skelbimas = s.id_Skelbimas
       WHERE fk_Vartotojasid_Vartotojas = ? AND fk_Skelbimasid_Skelbimas = ? 
       LIMIT 1
       `,
