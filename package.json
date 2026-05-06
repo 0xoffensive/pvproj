@@ -2,6 +2,9 @@
   "name": "pvpproject",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -34,6 +37,6 @@
     "typescript": "^5"
   },
   "optionalDependencies": {
-  "@tailwindcss/oxide-linux-x64-gnu": "^4.2.2"
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.2.2"
   }
 }
