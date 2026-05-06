@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 
 interface Seedling {
@@ -11,6 +12,14 @@ interface Seedling {
   distance: number;
   description: string;
   icon: string;
+}
+
+interface Post {
+  id_Skelbimas: number;
+  name: string;
+  latin_name: string;
+  price: number;
+  photo: string | null;
 }
 
 const SEEDLINGS: Seedling[] = [
@@ -62,6 +71,8 @@ export default function PlanavimasPage() {
   const [blockedCells, setBlockedCells] = useState<BlockedCell[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
 
+   const [recommendations, setRecommendations] = useState<Post[]>([]);
+
   const selectedSeedling = SEEDLINGS.find((seedling) => seedling.id === selectedSeedlingId) ?? SEEDLINGS[0];
 
   const grid = useMemo(
@@ -71,6 +82,49 @@ export default function PlanavimasPage() {
       ),
     [plotSize]
   );
+
+
+  useEffect(() => {
+    async function fetchRecommendations() {
+      if (placements.length === 0) {
+        setRecommendations([]);
+        return;
+      }
+
+      try {
+        const params = new URLSearchParams();
+        placements.forEach((placement) => {
+          const seedling = SEEDLINGS.find((s) => s.id === placement.seedlingId);
+          if (seedling) {
+            params.append("name", seedling.name);
+          }
+        });
+
+        const response = await fetch(`/api/skelbimai/rec?${params.toString()}`);
+
+        if (!response.ok) {
+          throw new Error("Nepavyko gauti rekomendacijų");
+        }
+
+        const data = await response.json();
+        const mappedRecommendations: Post[] = data.map((item: any) => ({
+          id_Skelbimas: item.id_Skelbimas,
+          name: item.pavadinimas,
+          latin_name: item.lotyniskas_pav || "",
+          photo: item.nuotrauka, // BASE64
+          price: item.kaina || 0,
+        }));
+
+        console.log("Gautos rekomendacijos:", mappedRecommendations);
+        setRecommendations(mappedRecommendations);
+      } catch (error) {
+        console.error("Error fetching recommendations:", error);
+        setRecommendations([]);
+      }
+    }
+
+    fetchRecommendations();
+  }, [placements]);
 
   const isBlocked = (x: number, y: number) => blockedCells.some((cell) => cell.x === x && cell.y === y);
   const existingPlacement = (x: number, y: number) => placements.find((placement) => placement.x === x && placement.y === y);
@@ -477,6 +531,57 @@ export default function PlanavimasPage() {
                   )}
                 </div>
               </div>
+{placements.length > 0 && recommendations.length > 0 && (
+  <div className="rounded-3xl border border-zinc-800 bg-zinc-900/90 p-8 shadow-xl shadow-black/10 mt-8">
+    <h2 className="text-2xl font-bold text-white">Sodinukų skelbimai</h2>
+    <p className="mt-3 text-sm text-zinc-400">
+      Šis sąrašas pateikia pasirinktų medžių sodinukų skelbimus platformoje.
+    </p>
+
+    {/* Large card grid layout - removed the inner wrapper and cleaned up nesting */}
+    <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {recommendations.map((rec, index) => (
+        <Link
+          key={`${rec.id_Skelbimas}-${index}`}
+          href={`/skelbimas/${rec.id_Skelbimas}`}
+          className="group block rounded-2xl border border-zinc-800 bg-zinc-950 p-6 transition-all hover:border-green-500/50 hover:shadow-lg"
+        >
+          {/* Large image container */}
+          <div className="relative mb-6 flex h-56 items-center justify-center overflow-hidden rounded-xl bg-zinc-900 text-6xl">
+            {rec.photo ? (
+              <img
+                src={rec.photo}
+                alt={rec.name || "Sodinukas"}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              "🌱"
+            )}
+          </div>
+
+          {/* Title and details */}
+          <h3 className="text-lg font-semibold text-white">
+            {rec.name || "Nenurodytas pavadinimas"}
+          </h3>
+          {rec.latin_name && (
+            <p className="mt-1 text-xs italic text-zinc-500">
+              {rec.latin_name}
+            </p>
+          )}
+
+          <div className="mt-6 flex w-full items-center justify-between">
+            <span className="text-lg font-bold text-green-700 dark:text-green-400">
+              {Number(rec.price).toFixed(2)} €
+            </span>
+            <span className="text-xs font-medium text-green-400 underline-offset-4 group-hover:underline">
+              Sužinoti daugiau
+            </span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  </div>
+)}
             </main>
           </div>
         )}

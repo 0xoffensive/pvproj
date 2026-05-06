@@ -191,7 +191,7 @@ export async function PUT(request: NextRequest) {
       const updateValues = Object.values(updateData);
 
       await connection.execute(
-        `UPDATE Vartotojai SET ${updateFields} WHERE id_Vartotojas = ?` as string,
+        `UPDATE Vartotojai SET ${updateFields} WHERE id_Vartotojas = ?`,
         [...updateValues, userId]
       );
 
