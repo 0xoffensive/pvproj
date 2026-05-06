@@ -190,9 +190,10 @@ export async function PUT(request: NextRequest) {
       const updateFields = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
       const updateValues = Object.values(updateData);
 
-      const query = `UPDATE Vartotojai SET ${updateFields} WHERE id_Vartotojas = ?`;
-      
-      await connection.execute(query, [...updateValues, userId]);
+      await connection.execute(
+        `UPDATE Vartotojai SET ${updateFields} WHERE id_Vartotojas = ?` as string,
+        [...updateValues, userId]
+      );
 
       // Update company info if user is atstovas
       if (imone) {
