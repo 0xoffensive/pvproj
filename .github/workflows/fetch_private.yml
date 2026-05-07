@@ -19,6 +19,7 @@ jobs:
           repository: PVPDievuMiskas/website
           token: ${{ secrets.PRIVATE_PAT }}
           path: temp_private_folder
+          ref: CI/CD-branch
 
       - name: Copy files and Push
         run: |
