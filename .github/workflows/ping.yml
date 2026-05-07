@@ -1,7 +1,7 @@
 name: DATABASE ping
 on:
   schedule:
-    - cron: '*/5 * * * *' # Runs every 6 hours
+    - cron: '0 */6 * * *' # Runs every 6 hours
   workflow_dispatch:      # Allows you to run it manually
 
 jobs:
