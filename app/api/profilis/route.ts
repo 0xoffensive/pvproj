@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     // Get user profile
     const [userRows] = await pool.execute<UserProfile[]>(
-      "SELECT id_Vartotojas, vardas, pavarde, e_pastas, slapyvardis, tel_nr, miestas, role, busena FROM Vartotojai WHERE id_Vartotojas = ?",
+      "SELECT id_Vartotojas, vardas, pavarde, e_pastas, slapyvardis, tel_nr, miestas, role, busena FROM vartotojai WHERE id_Vartotojas = ?",
       [userId]
     );
 
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     let company = null;
     if (user.role === "atstovas") {
       const [companyRows] = await pool.execute<CompanyProfile[]>(
-        "SELECT pavadinimas, miestas, pasto_kodas, adresas, pastato_nr, tel_nr, imones_kodas, pvm_kodas, svetaine FROM Imones WHERE fk_Vartotojasid_Vartotojas = ?",
+        "SELECT pavadinimas, miestas, pasto_kodas, adresas, pastato_nr, tel_nr, imones_kodas, pvm_kodas, svetaine FROM imones WHERE fk_Vartotojasid_Vartotojas = ?",
         [userId]
       );
 
@@ -143,7 +143,7 @@ export async function PUT(request: NextRequest) {
 
     // Check if email is already taken by another user
     const [existingEmail] = await connection.execute<RowDataPacket[]>(
-      "SELECT id_Vartotojas FROM Vartotojai WHERE e_pastas = ? AND id_Vartotojas != ?",
+      "SELECT id_Vartotojas FROM vartotojai WHERE e_pastas = ? AND id_Vartotojas != ?",
       [e_pastas, userId]
     );
 
@@ -156,7 +156,7 @@ export async function PUT(request: NextRequest) {
 
     // Check if username is already taken by another user
     const [existingUsername] = await connection.execute<RowDataPacket[]>(
-      "SELECT id_Vartotojas FROM Vartotojai WHERE slapyvardis = ? AND id_Vartotojas != ?",
+      "SELECT id_Vartotojas FROM vartotojai WHERE slapyvardis = ? AND id_Vartotojas != ?",
       [slapyvardis, userId]
     );
 
