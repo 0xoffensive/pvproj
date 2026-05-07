@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout Public Repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_PAT }}
 
       - name: Checkout Private Repo
         uses: actions/checkout@v4
@@ -26,7 +28,10 @@ jobs:
 
       - name: Copy files and Push
         run: |
-          cp -r temp_private_folder/* .
+          rm -rf temp_private_folder/.git
+          
+          cp -r temp_private_folder/. .
+          
           rm -rf temp_private_folder
           
           git config --global user.name "github-actions[bot]"
