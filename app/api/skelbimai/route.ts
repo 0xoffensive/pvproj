@@ -136,14 +136,14 @@ export async function POST(request: Request) {
     // If no company exists (for admin), create a dummy one
     if (!imoneId) {
       const [userData] = await pool.execute<RowDataPacket[]>(
-        "SELECT vardas, pavarde FROM Vartotojai WHERE id_Vartotojas = ?",
+        "SELECT vardas, pavarde FROM vartotojai WHERE id_Vartotojas = ?",
         [userId],
       );
 
       if (userData.length > 0) {
         const user = userData[0];
         const [insertResult] = await pool.execute<ResultSetHeader>(
-          "INSERT INTO Imones (pavadinimas, fk_Vartotojasid_Vartotojas) VALUES (?, ?)",
+          "INSERT INTO imones (pavadinimas, fk_Vartotojasid_Vartotojas) VALUES (?, ?)",
           [`${user.vardas} ${user.pavarde} (Admin)`, userId],
         );
         imoneId = insertResult.insertId;

@@ -16,7 +16,7 @@ export async function GET() {
       `SELECT s.*, i.pavadinimas as imone_pavadinimas, v.slapyvardis as vartotojas_slapyvardis
        FROM skelbimai s
        LEFT JOIN imones i ON s.fk_Imoneid_Imone = i.id_Imone
-       LEFT JOIN vartotojai v ON i.fk_Vartotojasid_Vartotojas = v.id_Vartotojas
+       LEFT JOIN Vartotojai v ON i.fk_Vartotojasid_Vartotojas = v.id_Vartotojas
        ORDER BY s.data DESC`
     );
 

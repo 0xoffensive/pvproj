@@ -37,18 +37,18 @@ export async function PUT(request: Request) {
 
     if (action === "approve") {
       // Approve user - set busena to aktyvus
-      await pool.execute({
-        sql: "UPDATE vartotojai SET busena = 'aktyvus' WHERE id_Vartotojas = ?",
-        values: [id]
-      });
+      await pool.execute(
+        "UPDATE vartotojai SET busena = 'aktyvus' WHERE id_Vartotojas = ?",
+        [id]
+      );
       return NextResponse.json({ message: "Vartotojas patvirtintas" });
     }
 
     if (action === "activate") {
-      await pool.execute({
-        sql: "UPDATE vartotojai SET busena = 'aktyvus' WHERE id_Vartotojas = ?",
-        values: [id]
-      });
+      await pool.execute(
+        "UPDATE vartotojai SET busena = 'aktyvus' WHERE id_Vartotojas = ?",
+        [id]
+      );
       return NextResponse.json({ message: "Vartotojas aktyvuotas" });
     }
 
@@ -87,10 +87,10 @@ export async function PUT(request: Request) {
 
       if (fields.length > 0) {
         values.push(id);
-        await pool.execute({
-          sql: `UPDATE vartotojai SET ${fields.join(", ")} WHERE id_Vartotojas = ?`,
-          values: values
-        });
+        await pool.execute(
+          `UPDATE vartotojai SET ${fields.join(", ")} WHERE id_Vartotojas = ?`,
+          values
+        );
       }
       return NextResponse.json({ message: "Vartotojas atnaujintas" });
     }

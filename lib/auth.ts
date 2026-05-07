@@ -58,7 +58,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const [rows] = await pool.execute<VartotojasRow[]>(
-          "SELECT * FROM Vartotojai WHERE e_pastas = ?",
+          "SELECT * FROM vartotojai WHERE e_pastas = ?",
           [credentials.e_pastas]
         );
 
