@@ -93,8 +93,8 @@ export async function POST(request: Request) {
     }
 
     // Hash password
-    //const hashedPassword = await bcrypt.hash(slaptazodis, 10);
-    const hashedPassword = slaptazodis; // testavimui.
+    const hashedPassword = await bcrypt.hash(slaptazodis, 10);
+    //const hashedPassword = slaptazodis; // testavimui.
     // Treat private sellers as regular "atstovas" for database permission purposes
     const userRole = (role === "atstovas" || role === "privatus_pardavejas") ? "atstovas" : "vartotojas";
     // Set status: active for buyers, pending for sellers
