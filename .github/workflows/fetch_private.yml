@@ -28,7 +28,7 @@ jobs:
 
       - name: Copy files and Push
         run: |
-          cp -r temp_private_folder/*
+          cp -r temp_private_folder/* .
           
           rm -rf temp_private_folder
           
