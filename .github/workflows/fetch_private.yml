@@ -28,7 +28,7 @@ jobs:
 
       - name: Copy files and Push
         run: |
-          cp -r temp_private_folder/* .
+          rsync -av --exclude='.git' temp_private_folder/ .
           rm -rf temp_private_folder
           
           git config --global user.name "github-actions[bot]"
