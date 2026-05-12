@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { Fragment, useMemo, useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 
 interface Seedling {
   id: string;
@@ -20,6 +21,11 @@ interface Post {
   latin_name: string;
   price: number;
   photo: string | null;
+}
+
+interface plotSz {
+  width: number;
+  height: number;
 }
 
 const SEEDLINGS: Seedling[] = [
@@ -50,7 +56,17 @@ const PRESET_SIZES = [
   { label: "12 × 12 m", width: 12, height: 12 },
   { label: "15 × 10 m", width: 15, height: 10 },
   { label: "20 × 15 m", width: 20, height: 15 },
+  { label: "30 × 30 m", width: 30, height: 30 },
+  { label: "50 × 50 m", width: 50, height: 50 },
+  { label: "80 × 80 m", width: 80, height: 80 },
 ];
+
+const GRID_MIN = 6;
+const GRID_MAX = 200;
+const CELL_SIZE_MIN = 16;
+const CELL_SIZE_MAX = 48;
+const CELL_SIZE_DEFAULT = 28;
+const PLOT_SIZE_DEFAULT: plotSz = { width: 12, height: 12 };
 
 type Mode = "place" | "block";
 
@@ -64,12 +80,16 @@ function distance(x1: number, y1: number, x2: number, y2: number) {
 
 export default function PlanavimasPage() {
   const { data: session, status } = useSession();
-  const [plotSize, setPlotSize] = useState({ width: 12, height: 12 });
-  const [mode, setMode] = useState<Mode>("place");
-  const [selectedSeedlingId, setSelectedSeedlingId] = useState(SEEDLINGS[0].id);
-  const [placements, setPlacements] = useState<Placement[]>([]);
-  const [blockedCells, setBlockedCells] = useState<BlockedCell[]>([]);
+  const [plotSize, setPlotSize] = useLocalStorage<plotSz>('plot_size', PLOT_SIZE_DEFAULT);
+  const [cellSize, setCellSize] = useLocalStorage<number>('cell_size', CELL_SIZE_DEFAULT);
+  const [mode, setMode] = useLocalStorage<Mode>('user_mode', 'place');
+  const [placements, setPlacements] = useLocalStorage<Placement[]>('user_placements', []);
+  const [blockedCells, setBlockedCells] = useLocalStorage<BlockedCell[]>('user_blocked_cells', []);
+  const [selectedSeedlingId, setSelectedSeedlingId] = useLocalStorage<string>('user_selected_seedling', SEEDLINGS[0].id);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragActionRef = useRef<"block" | "unblock" | null>(null);
+  const dragVisitedRef = useRef<Set<string>>(new Set());
 
    const [recommendations, setRecommendations] = useState<Post[]>([]);
 
@@ -82,7 +102,6 @@ export default function PlanavimasPage() {
       ),
     [plotSize]
   );
-
 
   useEffect(() => {
     async function fetchRecommendations() {
@@ -126,8 +145,21 @@ export default function PlanavimasPage() {
     fetchRecommendations();
   }, [placements]);
 
-  const isBlocked = (x: number, y: number) => blockedCells.some((cell) => cell.x === x && cell.y === y);
-  const existingPlacement = (x: number, y: number) => placements.find((placement) => placement.x === x && placement.y === y);
+  const blockedCellSet = useMemo(
+    () => new Set(blockedCells.map((cell) => `${cell.x}-${cell.y}`)),
+    [blockedCells]
+  );
+
+  const placementMap = useMemo(() => {
+    const map = new Map<string, Placement>();
+    placements.forEach((placement) => {
+      map.set(`${placement.x}-${placement.y}`, placement);
+    });
+    return map;
+  }, [placements]);
+
+  const isBlocked = (x: number, y: number) => blockedCellSet.has(`${x}-${y}`);
+  const existingPlacement = (x: number, y: number) => placementMap.get(`${x}-${y}`);
   const isPlacementTooClose = (x: number, y: number, seedlingId: string) => {
     const seedling = SEEDLINGS.find((item) => item.id === seedlingId);
     if (!seedling) return false;
@@ -139,22 +171,54 @@ export default function PlanavimasPage() {
     });
   };
 
+  const applyBlockAction = (x: number, y: number, action: "block" | "unblock") => {
+    if (existingPlacement(x, y)) {
+      setFeedback("Negalite pažymėti užblokuotos vietos ant jau pažymėto medžio.");
+      return;
+    }
+
+    setBlockedCells((current) => {
+      const exists = current.some((cell) => cell.x === x && cell.y === y);
+      if (action === "block") {
+        return exists ? current : [...current, { x, y }];
+      }
+      return exists ? current.filter((cell) => cell.x !== x || cell.y !== y) : current;
+    });
+  };
+
+  const toggleBlockedCell = (x: number, y: number) => {
+    const action = isBlocked(x, y) ? "unblock" : "block";
+    applyBlockAction(x, y, action);
+  };
+
+  const startBlockDrag = (x: number, y: number) => {
+    if (mode !== "block") return;
+    setFeedback(null);
+    setIsDragging(true);
+    dragVisitedRef.current = new Set();
+
+    const action = isBlocked(x, y) ? "unblock" : "block";
+    dragActionRef.current = action;
+    dragVisitedRef.current.add(`${x}-${y}`);
+    applyBlockAction(x, y, action);
+  };
+
+  const continueBlockDrag = (x: number, y: number) => {
+    if (!isDragging || mode !== "block") return;
+    const action = dragActionRef.current;
+    if (!action) return;
+
+    const key = `${x}-${y}`;
+    if (dragVisitedRef.current.has(key)) return;
+    dragVisitedRef.current.add(key);
+    applyBlockAction(x, y, action);
+  };
+
   const handleCellClick = (x: number, y: number) => {
     setFeedback(null);
 
     if (mode === "block") {
-      if (existingPlacement(x, y)) {
-        setFeedback("Negalite pažymėti užblokuotos vietos ant jau pažymėto medžio.");
-        return;
-      }
-
-      setBlockedCells((current) => {
-        const exists = current.some((cell) => cell.x === x && cell.y === y);
-        if (exists) {
-          return current.filter((cell) => cell.x !== x || cell.y !== y);
-        }
-        return [...current, { x, y }];
-      });
+      toggleBlockedCell(x, y);
       return;
     }
 
@@ -187,8 +251,27 @@ export default function PlanavimasPage() {
   const handleReset = () => {
     setPlacements([]);
     setBlockedCells([]);
+    setPlotSize({ width: 12, height: 12 });
     setFeedback("Planas išvalytas.");
   };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handlePointerUp = () => {
+      setIsDragging(false);
+      dragActionRef.current = null;
+      dragVisitedRef.current.clear();
+    };
+
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, [isDragging]);
 
   const exportMapAsPng = async () => {
     const cellSize = 40;
@@ -267,6 +350,7 @@ export default function PlanavimasPage() {
 
   const placedCount = placements.length;
   const blockedCount = blockedCells.length;
+  const headerSize = Math.max(28, cellSize);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -351,10 +435,10 @@ export default function PlanavimasPage() {
                       Plotis (m)
                       <input
                         type="number"
-                        min={6}
-                        max={30}
+                        min={GRID_MIN}
+                        max={GRID_MAX}
                         value={plotSize.width}
-                        onChange={(event) => setPlotSize((prev) => ({ ...prev, width: Math.max(6, Math.min(30, Number(event.target.value) || prev.width)) }))}
+                        onChange={(event) => setPlotSize((prev) => ({ ...prev, width: Math.max(GRID_MIN, Math.min(GRID_MAX, Number(event.target.value) || prev.width)) }))}
                         className="mt-2 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none ring-1 ring-transparent transition focus:border-emerald-500 focus:ring-emerald-500/20"
                       />
                     </label>
@@ -362,14 +446,34 @@ export default function PlanavimasPage() {
                       Ilgis (m)
                       <input
                         type="number"
-                        min={6}
-                        max={30}
+                        min={GRID_MIN}
+                        max={GRID_MAX}
                         value={plotSize.height}
-                        onChange={(event) => setPlotSize((prev) => ({ ...prev, height: Math.max(6, Math.min(30, Number(event.target.value) || prev.height)) }))}
+                        onChange={(event) => setPlotSize((prev) => ({ ...prev, height: Math.max(GRID_MIN, Math.min(GRID_MAX, Number(event.target.value) || prev.height)) }))}
                         className="mt-2 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none ring-1 ring-transparent transition focus:border-emerald-500 focus:ring-emerald-500/20"
                       />
                     </label>
                   </div>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-xl font-semibold text-white">Papildomai: priartinimas</h2>
+                <p className="mt-2 text-sm leading-6 text-zinc-400">
+                  Dideliems plotams naudokite priartinimą ir slinkite žemėlapį.
+                </p>
+                <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                  <label className="block text-sm text-zinc-300">
+                    Langelio dydis: {cellSize}px
+                    <input
+                      type="range"
+                      min={CELL_SIZE_MIN}
+                      max={CELL_SIZE_MAX}
+                      value={cellSize}
+                      onChange={(event) => setCellSize(Number(event.target.value))}
+                      className="mt-3 w-full accent-emerald-400"
+                    />
+                  </label>
                 </div>
               </section>
 
@@ -455,39 +559,70 @@ export default function PlanavimasPage() {
                     <p className="mt-1 text-sm text-zinc-400">Pažymėkite sklypą ir pridėkite sodinukus bei blokuotas zonas.</p>
                   </div>
                   <div className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
-                    Režimas: <span className="font-semibold text-white">{mode === "place" ? "Sodinimas" : "Blokavimas"}</span>
+                    Režimas: <span className={`font-semibold ${mode === "place" ? "text-white" : "text-red-600"}`}>
+                      {mode === "place" ? " Sodinimas" : " Blokavimas"}</span>
                   </div>
                 </div>
-                <div className="mt-6 overflow-auto rounded-3xl border border-zinc-800 bg-zinc-950 p-3">
+                <div className="mt-6 max-h-[70vh] overflow-auto rounded-3xl border border-zinc-800 bg-zinc-950 p-3">
                   <div
-                    className="grid gap-0.5"
-                    style={{ gridTemplateColumns: `repeat(${plotSize.width}, minmax(0, 1fr))` }}
+                    className="grid w-fit gap-px select-none"
+                    style={{ gridTemplateColumns: `${headerSize}px repeat(${plotSize.width}, ${cellSize}px)`, gridAutoRows: `${cellSize}px` }}
                   >
-                    {grid.flat().map(({ x, y }) => {
-                      const blocked = isBlocked(x, y);
-                      const placement = existingPlacement(x, y);
-                      const tooClose = mode === "place" && selectedSeedling ? isPlacementTooClose(x, y, selectedSeedling.id) : false;
+                    <div className="flex items-center justify-center bg-zinc-900/70 text-[10px] font-semibold text-zinc-500" />
+                    {Array.from({ length: plotSize.width }, (_, x) => (
+                      <div
+                        key={`col-${x}`}
+                        className="flex items-center justify-center bg-zinc-900/70 text-[10px] font-semibold text-zinc-500"
+                        title={`Stulpelis ${x + 1}`}
+                      >
+                        {x + 1}
+                      </div>
+                    ))}
 
-                      return (
-                        <button
-                          key={`${x}-${y}`}
-                          type="button"
-                          onClick={() => handleCellClick(x, y)}
-                          className={`aspect-square min-h-[2.4rem] border border-zinc-800 p-0 transition ${blocked ? "bg-red-500/20 hover:bg-red-500/30" : placement ? "bg-emerald-500/20 hover:bg-emerald-500/30" : tooClose ? "bg-yellow-500/10 hover:bg-yellow-500/20" : "bg-zinc-950/80 hover:bg-zinc-900"}`}
-                          title={`Koord: ${x + 1} × ${y + 1}`}
+                    {grid.map((row, y) => (
+                      <Fragment key={`row-${y}`}>
+                        <div
+                          className="flex items-center justify-center bg-zinc-900/70 text-[10px] font-semibold text-zinc-500"
+                          title={`Eilutė ${y + 1}`}
                         >
-                          <div className="flex h-full w-full items-center justify-center text-xs text-zinc-200">
-                            {placement ? (
-                              <span className="text-lg">{SEEDLINGS.find((item) => item.id === placement.seedlingId)?.icon}</span>
-                            ) : blocked ? (
-                              <span className="text-sm font-semibold text-red-200">✕</span>
-                            ) : tooClose ? (
-                              <span className="text-xs text-yellow-300">!</span>
-                            ) : null}
-                          </div>
-                        </button>
-                      );
-                    })}
+                          {y + 1}
+                        </div>
+                        {row.map(({ x, y: rowY }) => {
+                          const blocked = isBlocked(x, rowY);
+                          const placement = existingPlacement(x, rowY);
+                          const tooClose = mode === "place" && selectedSeedling ? isPlacementTooClose(x, rowY, selectedSeedling.id) : false;
+
+                          return (
+                            <button
+                              key={`${x}-${rowY}`}
+                              type="button"
+                              onClick={mode === "place" ? () => handleCellClick(x, rowY) : undefined}
+                              onPointerDown={() => startBlockDrag(x, rowY)}
+                              onPointerEnter={() => continueBlockDrag(x, rowY)}
+                              onKeyDown={(event) => {
+                                if (mode !== "block") return;
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault();
+                                  handleCellClick(x, rowY);
+                                }
+                              }}
+                              className={`h-full w-full border border-zinc-800 p-0 transition ${blocked ? "bg-red-500/20 hover:bg-red-500/30" : placement ? "bg-emerald-500/20 hover:bg-emerald-500/30" : tooClose ? "bg-yellow-500/10 hover:bg-yellow-500/20" : "bg-zinc-950/80 hover:bg-zinc-900"}`}
+                              title={`Koord: ${x + 1} × ${rowY + 1}`}
+                            >
+                              <div className="flex h-full w-full items-center justify-center text-xs text-zinc-200">
+                                {placement ? (
+                                  <span className="text-lg">{SEEDLINGS.find((item) => item.id === placement.seedlingId)?.icon}</span>
+                                ) : blocked ? (
+                                  <span className="text-sm font-semibold text-red-200">✕</span>
+                                ) : tooClose ? (
+                                  <span className="text-xs text-yellow-300">!</span>
+                                ) : null}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </Fragment>
+                    ))}
                   </div>
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">

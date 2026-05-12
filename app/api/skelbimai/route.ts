@@ -31,6 +31,7 @@ export async function GET(request: Request) {
     const params: any[] = [];
 
     if (id) {
+      // If fetching a specific listing by ID, we allow seeing it even if inactive (for the seller viewing it)
       query = `
         SELECT 
           s.*,

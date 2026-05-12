@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
     // Check if email already exists
     const [existingEmail] = await connection.execute<RowDataPacket[]>(
-      "SELECT id_Vartotojas FROM vartotojai WHERE e_pastas = ?",
+      "SELECT id_Vartotojas FROM Vartotojai WHERE e_pastas = ?",
       [e_pastas]
     );
 
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 
     // Check if username already exists
     const [existingUsername] = await connection.execute<RowDataPacket[]>(
-      "SELECT id_Vartotojas FROM vartotojai WHERE slapyvardis = ?",
+      "SELECT id_Vartotojas FROM Vartotojai WHERE slapyvardis = ?",
       [slapyvardis]
     );
 
@@ -94,7 +94,6 @@ export async function POST(request: Request) {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(slaptazodis, 10);
-    //const hashedPassword = slaptazodis; // testavimui.
     // Treat private sellers as regular "atstovas" for database permission purposes
     const userRole = (role === "atstovas" || role === "privatus_pardavejas") ? "atstovas" : "vartotojas";
     // Set status: active for buyers, pending for sellers
