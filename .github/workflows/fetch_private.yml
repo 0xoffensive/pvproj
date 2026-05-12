@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout Public Repo
         uses: actions/checkout@v4
+        with:
+          ref: CI/CD
 
       - name: Checkout Private Repo
         uses: actions/checkout@v4
