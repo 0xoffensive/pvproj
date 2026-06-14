@@ -54,6 +54,7 @@ export default function MessagingMenu() {
   const handleGoBack = () => {
     if (selectedChat) saveCurrentScroll(`chat-${selectedChat.chatId}`); // Save where we were in the chat
     setView("list");
+    setSelectedChat(null);
   };
 
   const handleMenuButton = () => {
@@ -84,25 +85,54 @@ export default function MessagingMenu() {
   }, [view, isOpen, selectedChat]);
 
   useEffect(() => {
+    // 1. Create an active flag to prevent race conditions
+    let isCurrentRequest = true;
+
     const loadMessages = async () => {
-      if (!selectedChat?.chatId) return;
+      if (!selectedChat?.chatId) {
+        // Clear messages immediately if navigating away or no chat selected
+        setMessages([]);
+        return;
+      }
 
       setIsLoading(true);
       try {
         const response = await fetch(
-          `/api/chats/messages?chatId=${selectedChat?.chatId}`,
+          `/api/chats/messages?chatId=${selectedChat.chatId}`,
         );
         const data = await response.json();
 
-        setMessages(data as Message[]);
+        // 2. Only update state if the user hasn't switched chats mid-fetch
+        if (isCurrentRequest) {
+          // 3. Strictly validate that the payload is actually an array before saving it
+          if (Array.isArray(data)) {
+            setMessages(data);
+          } else if (
+            data &&
+            typeof data === "object" &&
+            Array.isArray((data as any).messages)
+          ) {
+            // Fallback wrapper check in case your API returns { messages: [...] }
+            setMessages((data as any).messages);
+          } else {
+            console.error("API did not return an array:", data);
+            setMessages([]);
+          }
+        }
       } catch (error) {
         console.error("Klaida užkraunant žinutes:", error);
-        setMessages([]);
+        if (isCurrentRequest) setMessages([]);
+      } finally {
+        if (isCurrentRequest) setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     loadMessages();
+
+    // 4. Cleanup function triggers when chatId changes or component unmounts
+    return () => {
+      isCurrentRequest = false;
+    };
   }, [selectedChat?.chatId]);
 
   // Handle Body Scroll Lock
@@ -148,45 +178,51 @@ export default function MessagingMenu() {
   }, [status, userId]);
 
   useEffect(() => {
-    if (!selectedChat?.chatId || selectedChat.chatId === -1) return;
+    // 1. Guard check: Ensure we have a valid chat selection
+    const chatId = selectedChat?.chatId;
+    if (!chatId || chatId === -1) return;
 
     const pusher = getPusherClient();
-    const channel = pusher.subscribe(`chat-${selectedChat.chatId}`);
+    const channelName = `chat-${chatId}`;
+    const channel = pusher.subscribe(channelName);
 
     // Bind to the event
     channel.bind("upcoming-message", (incoming: Message) => {
       setMessages((prev) => {
-        // 1. Check by ID (Standard)
-        const idExists = prev.some((m) => m.messageId === incoming.messageId);
+        // 2. Strict ID verification
+        if (prev.some((m) => m.messageId === incoming.messageId)) {
+          return prev;
+        }
 
-        // 2. Check by Text + Sender (Fallback for race conditions)
-        // If we find a message with the SAME text that is still "siunciama" (sending),
-        // we assume the Pusher event beat the Fetch response.
-        const optimisticMatch = prev.some(
+        // 3. Find the exact optimistic message index
+        // Checking for the FIRST matching text from the same sender that is still sending.
+        const optimisticIndex = prev.findIndex(
           (m) =>
             m.status === "siunciama" &&
             m.text === incoming.text &&
             m.sender === "thisUser",
         );
 
-        if (idExists || optimisticMatch) {
-          // If it's an optimistic match, we actually want to update that message
-          // with the real ID immediately so the 'fetch' doesn't fail later.
-          return prev.map((m) =>
-            m.text === incoming.text && m.status === "siunciama"
-              ? { ...m, messageId: incoming.messageId, status: "issiusta" }
-              : m,
-          );
+        // 4. Update the optimistic message if found
+        if (optimisticIndex !== -1) {
+          const updated = [...prev];
+          updated[optimisticIndex] = {
+            ...updated[optimisticIndex],
+            messageId: incoming.messageId,
+            status: incoming.status || "issiusta", // Fallback to safe status value
+          };
+          return updated;
         }
 
+        // 5. If it's a completely fresh message (from another user), append it
         return [...prev, incoming];
       });
     });
 
-    // CLEANUP is critical here
+    // 6. Complete cleanup handling
     return () => {
-      channel.unbind("upcoming-message"); // Stop listening
-      pusher.unsubscribe(`chat-${selectedChat.chatId}`); // Close the channel sub
+      channel.unbind("upcoming-message");
+      pusher.unsubscribe(channelName);
     };
   }, [selectedChat?.chatId]);
 
@@ -238,9 +274,10 @@ export default function MessagingMenu() {
     if (!message.trim() || !selectedChat) return;
 
     let currentChatId = selectedChat.chatId;
+    let isNewChat = currentChatId === -1;
 
     // 1. INSERT NEW CHAT IF DOESN'T EXIST (-1 logic)
-    if (currentChatId === -1) {
+    if (isNewChat) {
       try {
         const response = await fetch("/api/chats", {
           method: "POST",
@@ -250,18 +287,20 @@ export default function MessagingMenu() {
 
         if (response.ok) {
           const data = await response.json();
-          currentChatId = data.id;
+          currentChatId = data.id; // Sync our local execution pointer
+          console.log("CHAT CREATED WITH ID:", currentChatId);
 
-          // Update the selectedChat state so the rest of the app knows the real ID
-          setSelectedChat((prev) =>
-            prev ? { ...prev, chatId: data.id } : null,
+          // Update the selectedChat state immediately
+          const updatedChat = { ...selectedChat, chatId: data.id };
+          setSelectedChat(updatedChat);
+
+          // ALWAYS sync this back up to your parent chat list state if it exists!
+          // Example: if you have a setChatList state function passed down:
+          setChats((prev) =>
+            prev.map((c) =>
+              c.chatId === selectedChat.chatId ? updatedChat : c,
+            ),
           );
-
-          /** * IMPORTANT: Since this is a brand new chat, your Pusher
-           * useEffect might not be listening to this ID yet.
-           * You might need to manually trigger a subscribe here
-           * if your useEffect doesn't catch the state change fast enough.
-           */
         } else {
           console.error("Failed to create chat");
           return;
@@ -272,11 +311,11 @@ export default function MessagingMenu() {
       }
     }
 
-    // 2. OPTIMISTIC UPDATE
-    const tempId = Date.now(); // Use timestamp for a unique temp ID
+    // 2. OPTIMISTIC UPDATE (Guaranteed to use the correct currentChatId now)
+    const tempId = Date.now();
     const payload: Message = {
       messageId: tempId,
-      chatId: currentChatId,
+      chatId: currentChatId, // This will correctly be data.id now
       text: message,
       sender: "thisUser",
       status: "siunciama",
@@ -285,10 +324,10 @@ export default function MessagingMenu() {
     // Update UI immediately
     setMessages((prev) => [...prev, payload]);
     scrollToBottom();
-    const textToClear = message; // Keep a reference
+    const textToClear = message;
     setMessage("");
 
-    // 3. SEND TO API (Which triggers Pusher internally)
+    // 3. SEND TO API
     try {
       const response = await fetch("/api/chats/messages", {
         method: "POST",
@@ -303,7 +342,6 @@ export default function MessagingMenu() {
       if (response.ok) {
         const data = await response.json();
 
-        // Update the optimistic message with the real DB ID
         setMessages((prev) =>
           prev.map((msg) =>
             msg.messageId === tempId
@@ -312,7 +350,6 @@ export default function MessagingMenu() {
           ),
         );
       } else {
-        // Handle server error (e.g., mark as failed)
         setMessages((prev) =>
           prev.map((msg) =>
             msg.messageId === tempId ? { ...msg, status: "klaida" } : msg,
