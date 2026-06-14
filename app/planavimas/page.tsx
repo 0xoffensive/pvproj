@@ -74,6 +74,14 @@ type Placement = { x: number; y: number; seedlingId: string };
 
 type BlockedCell = { x: number; y: number };
 
+type PendingPlacement = {
+  x: number;
+  y: number;
+  seedlingId: string;
+  requiresUnblock: boolean;
+  warningMessage: string;
+};
+
 function distance(x1: number, y1: number, x2: number, y2: number) {
   return Math.hypot(x1 - x2, y1 - y2);
 }
@@ -87,6 +95,7 @@ export default function PlanavimasPage() {
   const [blockedCells, setBlockedCells] = useLocalStorage<BlockedCell[]>('user_blocked_cells', []);
   const [selectedSeedlingId, setSelectedSeedlingId] = useLocalStorage<string>('user_selected_seedling', SEEDLINGS[0].id);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [pendingPlacement, setPendingPlacement] = useState<PendingPlacement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragActionRef = useRef<"block" | "unblock" | null>(null);
   const dragVisitedRef = useRef<Set<string>>(new Set());
@@ -160,6 +169,9 @@ export default function PlanavimasPage() {
 
   const isBlocked = (x: number, y: number) => blockedCellSet.has(`${x}-${y}`);
   const existingPlacement = (x: number, y: number) => placementMap.get(`${x}-${y}`);
+  const removeBlockedCell = (x: number, y: number) => {
+    setBlockedCells((current) => current.filter((cell) => cell.x !== x || cell.y !== y));
+  };
   const isPlacementTooClose = (x: number, y: number, seedlingId: string) => {
     const seedling = SEEDLINGS.find((item) => item.id === seedlingId);
     if (!seedling) return false;
@@ -234,18 +246,51 @@ export default function PlanavimasPage() {
     }
 
     if (isBlocked(x, y)) {
-      setFeedback("Šioje vietoje negalima sodinti sodinukų.");
+      setPendingPlacement({
+        x,
+        y,
+        seedlingId: selectedSeedling.id,
+        requiresUnblock: true,
+        warningMessage: "Ši vieta pažymėta kaip negalima sodinti. Ar tikrai norite čia pasodinti sodinuką?",
+      });
       return;
     }
 
     if (isPlacementTooClose(x, y, selectedSeedling.id)) {
-      setFeedback(
-        `Negalima sodinti čia. Pasirinktas sodinukas reikalauja bent ${selectedSeedling.distance} m atstumo nuo kitų.`
-      );
+      setPendingPlacement({
+        x,
+        y,
+        seedlingId: selectedSeedling.id,
+        requiresUnblock: false,
+        warningMessage: `Pasirinktas sodinukas reikalauja bent ${selectedSeedling.distance} m atstumo nuo kitų. Ar tikrai norite čia pasodinti?`,
+      });
       return;
     }
 
     setPlacements((current) => [...current, { x, y, seedlingId: selectedSeedling.id }]);
+  };
+
+  const confirmPendingPlacement = () => {
+    if (!pendingPlacement) return;
+    const { x, y, seedlingId, requiresUnblock } = pendingPlacement;
+
+    if (requiresUnblock) {
+      removeBlockedCell(x, y);
+    }
+
+    setPlacements((current) => {
+      if (current.some((placement) => placement.x === x && placement.y === y)) {
+        return current;
+      }
+      return [...current, { x, y, seedlingId }];
+    });
+
+    setPendingPlacement(null);
+  };
+
+  const cancelPendingPlacement = () => {
+    setPendingPlacement(null);
+    setFeedback("Sodinimas atšauktas.");
   };
 
   const handleReset = () => {
@@ -721,6 +766,37 @@ export default function PlanavimasPage() {
           </div>
         )}
       </div>
+      {pendingPlacement ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
+          <div className="w-full max-w-lg rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl shadow-black/40">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/15 text-2xl text-red-300">
+                !
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-white">Patvirtinkite sodinimą</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-400">{pendingPlacement.warningMessage}</p>
+              </div>
+            </div>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={cancelPendingPlacement}
+                className="rounded-2xl border border-zinc-700 bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-900"
+              >
+                Atšaukti
+              </button>
+              <button
+                type="button"
+                onClick={confirmPendingPlacement}
+                className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-emerald-400"
+              >
+                Vis tiek sodinti
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
