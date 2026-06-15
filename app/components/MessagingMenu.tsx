@@ -186,45 +186,62 @@ export default function MessagingMenu() {
     const channelName = `chat-${chatId}`;
     const channel = pusher.subscribe(channelName);
 
-    // Bind to the event
+    // Bind to the real-time event
     channel.bind("upcoming-message", (incoming: Message) => {
+      // Identify if this incoming broadcast was originally sent by the logged-in user
+      const isFromMe =
+        incoming.sender === session?.user?.id || incoming.sender === "thisUser";
+
       setMessages((prev) => {
-        // 2. Strict ID verification
-        if (prev.some((m) => m.messageId === incoming.messageId)) {
+        // 2. Strict ID verification: If this real DB messageId already exists, drop it
+        if (
+          prev.some((m) => String(m.messageId) === String(incoming.messageId))
+        ) {
           return prev;
         }
 
         // 3. Find the exact optimistic message index
-        // Checking for the FIRST matching text from the same sender that is still sending.
+        // We look for a temporary message that is still "siunciama" with matching text.
+        // Crucial: It must match if the local sender was "thisUser" OR your real user ID.
         const optimisticIndex = prev.findIndex(
           (m) =>
             m.status === "siunciama" &&
             m.text === incoming.text &&
-            m.sender === "thisUser",
+            (m.sender === "thisUser" || m.sender === session?.user?.id),
         );
 
         // 4. Update the optimistic message if found
         if (optimisticIndex !== -1) {
           const updated = [...prev];
+          // Replace temporary object with the official server payload.
+          // We override the sender parameter to ensure it maintains consistency for UI positioning.
           updated[optimisticIndex] = {
-            ...updated[optimisticIndex],
-            messageId: incoming.messageId,
-            status: incoming.status || "issiusta", // Fallback to safe status value
+            ...incoming,
+            sender: session?.user?.id
+              ? String(session.user.id)
+              : incoming.sender,
           };
           return updated;
         }
 
-        // 5. If it's a completely fresh message (from another user), append it
+        // 5. Echo protection fallback: If it's from me, but no optimistic copy is pending,
+        // your local fetch POST response already updated the message array successfully.
+        // Discard this incoming Pusher duplication.
+        if (isFromMe) {
+          return prev;
+        }
+
+        // 6. Incoming message from the other user: append it safely
         return [...prev, incoming];
       });
     });
 
-    // 6. Complete cleanup handling
+    // 7. Cleanup is critical to prevent sub memory leaks when switching chats
     return () => {
       channel.unbind("upcoming-message");
       pusher.unsubscribe(channelName);
     };
-  }, [selectedChat?.chatId]);
+  }, [selectedChat?.chatId, session?.user?.id]);
 
   useEffect(() => {
     const handleGlobalOpenChat = (event: CustomEvent<{ data: Chat }>) => {
@@ -270,6 +287,9 @@ export default function MessagingMenu() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const pusher = getPusherClient();
+    const sockedId = pusher.connection.socket_id;
 
     if (!message.trim() || !selectedChat) return;
 
@@ -317,7 +337,7 @@ export default function MessagingMenu() {
       messageId: tempId,
       chatId: currentChatId, // This will correctly be data.id now
       text: message,
-      sender: "thisUser",
+      sender: session?.user?.id || "thisUser",
       status: "siunciama",
     };
 
@@ -471,20 +491,20 @@ export default function MessagingMenu() {
                   ) : (
                     messages.map((msg, index, filteredArray) => {
                       const isLastMessage = index === filteredArray.length - 1;
-
+                      const isMe =
+                        msg.sender === session?.user?.id ||
+                        msg.sender === "thisUser";
                       return (
                         <div
                           key={msg.messageId}
                           className={`flex flex-col ${
-                            msg.sender === "thisUser"
-                              ? "items-end"
-                              : "items-start"
+                            isMe ? "items-end" : "items-start"
                           }`}
                         >
                           {/* Message Bubble */}
                           <div
                             className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
-                              msg.sender === "thisUser"
+                              isMe
                                 ? "bg-green-600 text-white rounded-tr-none shadow-lg shadow-green-900/20"
                                 : "bg-zinc-800 text-zinc-200 rounded-tl-none border border-white/5"
                             }`}
@@ -493,7 +513,7 @@ export default function MessagingMenu() {
                           </div>
 
                           {/* Status Indicator - Only for your own messages AND only for the last one */}
-                          {msg.sender === "thisUser" && isLastMessage && (
+                          {isMe && isLastMessage && (
                             <span
                               style={{ fontSize: "12px" }}
                               className="mt-1 px-1 font-medium text-zinc-600"

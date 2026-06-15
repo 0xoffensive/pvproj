@@ -1,7 +1,7 @@
 export interface Message {
   messageId?: number;
   chatId: number;
-  sender: "thisUser" | "other";
+  sender: string; // "thisUser" or "other"
   senderId?: number;
   text: string;
   date?: Date;
